@@ -62,9 +62,21 @@ yum list gcc-c++;yum install gcc-c++;
 终于在target/release看到了binary文件
 
 2. 实现打印日志功能
-
-
-
+一开始把题目看错了，看成了输出"hello transaction"给客户端，心想需要改返回值，于是想到COM_QUERY Response：
+https://dev.mysql.com/doc/internals/en/com-query-response.html
+是不是要改OK_Packet呢？
+https://dev.mysql.com/doc/internals/en/packet-OK_Packet.html
+但是不对，这样就改了MySQL的客户端-服务端协议；需要客户端也做适配。
+再看题目是输出到日志。
+于是捋了一遍SQL Parser相关过程：
+https://pingcap.com/blog-cn/tidb-source-code-reading-3
+于是想到在执行语句的时候打印日志：
+session.executeStatement
+发现有个方法调用：logStmt(stmt, s.sessionVars)
+于是扩展这个方法：
+如果是ast.BeginStmt，则打印日志
+如果是Query语句，同时是自动提交，也打印日志。
+但是有个问题，显式事务里面的Query语句怎么处理？
 
 
 
