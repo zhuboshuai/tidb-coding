@@ -1,6 +1,9 @@
 #1. 编译
+
 选了一台内网通外网机器开始下载代码编译。我选了4.0.4代码来编译而不是master。
+
 ##1.1 首先是tidb，检出自己的分支:
+
 git checkout release-4.0.4
 git branch zhubs release-4.0.4 
 git checkout zhubs
