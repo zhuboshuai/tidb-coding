@@ -20,7 +20,7 @@ Get "https://proxy.golang.org/github.com connection timed out
 查看下设置是否生效：
 ```go env | grep GOPROXY```  
 继续编译，这次成功完成。可见binary文件：  
-![image]https://github.com/zhuboshuai/tidb-coding/blob/master/pd%E7%BC%96%E8%AF%91.png   
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/tidb%E7%BC%96%E8%AF%91.png)   
 
 ## 1.2 pd
 
@@ -40,6 +40,7 @@ make: *** [install-go-tools] Error 56
 看来修改方式太粗暴了，于是重新看了一遍脚本，只注释了部分download_embed_asset的代码，同时把embedded-assets-golang.zip包名修改为embedded-assets-golang-2020.08.07.1.zip  
 继续编译，通过  
 在bin目录下可见binary:  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/pd%E7%BC%96%E8%AF%91.png)   
 
 ## 1.3 编译tikv
 
@@ -70,7 +71,8 @@ $HOME/.cargo/config配置ustc的镜像，然后下载速度飞快
     is not a full path and was not found in the PATH.  
 解决：  
 ```yum list gcc-c++;yum install gcc-c++;  ```  
-终于在target/release看到了binary文件  
+终于在target/release看到了binary文件:  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/tikv%E7%BC%96%E8%AF%91.png)   
 
 # 2. 实现打印日志功能
 
