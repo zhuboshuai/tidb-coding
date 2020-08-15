@@ -116,21 +116,87 @@ nohup ./tikv-server --addr 0.0.0.0:20171 --advertise-addr 192.168.0.1:20171 --st
 
 # 3. 实现打印日志功能
 
-一开始把题目看错了，看成了输出"hello transaction"给客户端，心想需要改返回值，于是想到COM_QUERY Response：   
+一开始把题目看错了，看成了输出"hello transaction"给客户端，心想需要改返回值，于是想到COM_QUERY Response：     
 https://dev.mysql.com/doc/internals/en/com-query-response.html  
 是不是要改OK_Packet呢？  
 https://dev.mysql.com/doc/internals/en/packet-OK_Packet.html  
-但是不对，这样就改了MySQL的客户端-服务端协议；需要客户端也做适配。  
-再看题目是输出到日志。  
+但是不对，这样就改了MySQL的客户端-服务端协议；需要客户端也做适配    
+再看题目是输出到日志  
 于是捋了一遍SQL Parser相关过程：  
+https://pingcap.com/blog-cn/tidb-source-code-reading-2  
 https://pingcap.com/blog-cn/tidb-source-code-reading-3  
 于是想到在执行语句的时候打印日志：  
-session.executeStatement  
-发现有个方法调用：logStmt(stmt, s.sessionVars)  
+session.go中:  
+```go
+session.executeStatement
+```  
+发现有个方法调用：`logStmt(stmt, s.sessionVars)`  
 于是扩展这个方法：  
-如果是ast.BeginStmt，则打印日志  
-如果是Query语句，同时是自动提交，也打印日志。  
-但是有个问题，显式事务里面的Query语句怎么处理？  
+- 如果是ast.BeginStmt，则打印日志  
+- 如果是Query语句，同时是自动提交状态，也打印日志
+
+但是有个问题，显式事务里面的Query语句怎么处理？显示事务里应该只有在启动事务时(begin)打印日志，事务中的语句不应该再输出了  
+起初想到```context.Context```里去看看，发现没有想要的内容   
+于是发现```vars```里有相关变量  
+整个判断条件变为:  
+```go
+func logStmt(execStmt *executor.ExecStmt, vars *variable.SessionVars) {
+	user := vars.User
+	schemaVersion := vars.TxnCtx.SchemaVersion
+	switch stmt := execStmt.StmtNode.(type) {
+	case *ast.CreateUserStmt, *ast.DropUserStmt, *ast.AlterUserStmt, *ast.SetPwdStmt, *ast.GrantStmt,
+		*ast.RevokeStmt, *ast.AlterTableStmt, *ast.CreateDatabaseStmt, *ast.CreateIndexStmt, *ast.CreateTableStmt,
+		*ast.DropDatabaseStmt, *ast.DropIndexStmt, *ast.DropTableStmt, *ast.RenameTableStmt, *ast.TruncateTableStmt:
+		if ss, ok := execStmt.StmtNode.(ast.SensitiveStmtNode); ok {
+			logutil.BgLogger().Info("CRUCIAL OPERATION",
+				zap.Uint64("conn", vars.ConnectionID),
+				zap.Int64("schemaVersion", schemaVersion),
+				zap.String("secure text", ss.SecureText()),
+				zap.Stringer("user", user))
+		} else {
+			logutil.BgLogger().Info("CRUCIAL OPERATION",
+				zap.Uint64("conn", vars.ConnectionID),
+				zap.Int64("schemaVersion", schemaVersion),
+				zap.String("cur_db", vars.CurrentDB),
+				zap.String("sql", stmt.Text()),
+				zap.Stringer("user", user))
+		}
+	case *ast.BeginStmt:
+		logutil.BgLogger().Info("hello transaction",
+			zap.Uint64("conn", vars.ConnectionID),
+			zap.Int64("schemaVersion", schemaVersion),
+			zap.String("cur_db", vars.CurrentDB),
+			zap.String("sql", stmt.Text()),
+			zap.Stringer("user", user))
+	default:
+		if (vars.IsAutocommit() && !vars.InTxn()){
+			logutil.BgLogger().Info("hello transaction",
+				zap.Uint64("conn", vars.ConnectionID),
+				zap.Int64("schemaVersion", schemaVersion),
+				zap.String("cur_db", vars.CurrentDB),
+				zap.String("sql", stmt.Text()),
+				zap.Stringer("user", user))
+		}
+		logQuery(execStmt.GetTextToLog(), vars)
+	}
+}
+```
+重新编译后验证日志输出:  
+set @@autocommit = 0;
+begin;
+insert into test.t values(1);
+commit;
+发现begin被正常记录，但是没有记录insert：
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/%E9%AA%8C%E8%AF%81%E6%97%A5%E5%BF%971.png) 
+
+再验证场景2：  
+set @@autocommit = 1;
+insert into test.t values(2);
+发现insert被正常记录：
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/%E9%AA%8C%E8%AF%81%E6%97%A5%E5%BF%972.png) 
+
+同时发现输出hello transaction的内部SQL很多，其实也可以去掉，根据user的类别可以实现只输出用户的hello transaction日志，不再赘述。
+
 
 
 
