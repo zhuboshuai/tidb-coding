@@ -88,8 +88,10 @@ nohup ./pd-server --name="pd" \
 ```  
 查看pd状态:   
 ```curl http://192.168.0.1:2379/pd/api/v1/members```   
-可见`members` `leader` `etcd_leader`都正常，脱敏麻烦不再上图
-查看pd日志:   
+可见`members` `leader` `etcd_leader`都正常:   
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/pd-member-desen.png)   
+查看pd日志:     
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/pd%E5%90%AF%E5%8A%A8%E6%97%A5%E5%BF%97-desen.png)  
 
 ## 2.2 启动TiKV 
 隐去IP:   
@@ -97,17 +99,20 @@ nohup ./pd-server --name="pd" \
 nohup ./tikv-server --addr 0.0.0.0:20171 --advertise-addr 192.168.0.1:20171 --status-addr 192.168.0.1:20181 --pd 192.168.0.1:2379 --data-dir /data/kaifa/deploydir/tikv/data --log-file /data/kaifa/deploydir/tikv/log/tikv.log &
 ```
 查看pd状态:   
-```url http://192.168.0.1:2379/pd/api/v1/stores```
-
+```url http://192.168.0.1:2379/pd/api/v1/stores```  
+结果:  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/pd-stores-desen.png)  
 查看启动日志:      
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/tikv%E5%90%AF%E5%8A%A8%E6%97%A5%E5%BF%97-desen.png)  
 
 ## 2.3 启动TiDB
 隐去IP:  
 ```nohup ./tidb-server -P 4000 --status=10080 --advertise-address=192.168.0.1 --path=192.168.0.1:2379  --log-slow-query=/data/kaifa/deploydir/tidb/log/tidb_slow_query.log --log-file=/data/kaifa/deploydir/tidb/log/tidb.log &```
 查看启动日志: 
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/tidb%E5%90%AF%E5%8A%A8%E6%97%A5%E5%BF%97-desen.png)    
 尝试访问集群:   
 ```mysql -uroot -h192.168.0.1 -P4000```
-
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/tidb%E8%AE%BF%E9%97%AE-desen.png)    
 
 # 3. 实现打印日志功能
 
