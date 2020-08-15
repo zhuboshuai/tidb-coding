@@ -196,7 +196,8 @@ insert into test.t values(2);
 ![image](https://github.com/zhuboshuai/tidb-coding/blob/master/%E9%AA%8C%E8%AF%81%E6%97%A5%E5%BF%972.png) 
 
 同时发现输出hello transaction的内部SQL很多，其实也可以去掉，根据user的类别可以实现只输出用户的hello transaction日志，不再赘述。
-
-
+必须补充一下这个日志输出必须打开general_log:  
+```set @@tidb_general_log = 1```  
+不依赖general_log的话可以重新实现一个日志函数去掉对general_log的判断，不再赘述。
 
 
