@@ -1,6 +1,6 @@
-1. 编译
+#1. 编译
 选了一台内网通外网机器开始下载代码编译。我选了4.0.4代码来编译而不是master。
-1.1 首先是tidb，检出自己的分支:
+##1.1 首先是tidb，检出自己的分支:
 git checkout release-4.0.4
 git branch zhubs release-4.0.4 
 git checkout zhubs
@@ -14,7 +14,7 @@ go env -w GOPROXY=https://goproxy.cn
 查看下设置是否生效：go env | grep GOPROXY
 继续编译，这次成功完成。可见binary文件：
 
-1.2 然后是pd
+##1.2 然后是pd
 仍然检出自己的分支，这次用的是release-4.0分支
 开始编译，很快报错：
 make: *** [install-go-tools] Error 56
@@ -32,7 +32,7 @@ go install ***
 继续编译，通过。
 在bin目录下可见binary:
 
-1.3 编译tikv:
+##1.3 编译tikv:
 checkout的是release-4.0分支
 立即开始make,然后发现rust也没装。开始安装rust环境。
 curl https://sh.rustup.rs -sSf | sh
@@ -61,7 +61,7 @@ yum install cmake3; mv /usr/bin/cmake /usr/bin/cmake.bak;ln -s /usr/bin/cmake3 /
 yum list gcc-c++;yum install gcc-c++;  
 终于在target/release看到了binary文件
 
-2. 实现打印日志功能
+#2. 实现打印日志功能
 一开始把题目看错了，看成了输出"hello transaction"给客户端，心想需要改返回值，于是想到COM_QUERY Response：
 https://dev.mysql.com/doc/internals/en/com-query-response.html
 是不是要改OK_Packet呢？
