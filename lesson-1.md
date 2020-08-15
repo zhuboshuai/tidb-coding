@@ -20,6 +20,7 @@ Get "https://proxy.golang.org/github.com connection timed out
 查看下设置是否生效：
 ```go env | grep GOPROXY```  
 继续编译，这次成功完成。可见binary文件：  
+![image]https://github.com/zhuboshuai/tidb-coding/blob/master/pd%E7%BC%96%E8%AF%91.png   
 
 ## 1.2 pd
 
