@@ -74,7 +74,42 @@ $HOME/.cargo/config配置ustc的镜像，然后下载速度飞快
 终于在target/release看到了binary文件:  
 ![image](https://github.com/zhuboshuai/tidb-coding/blob/master/tikv%E7%BC%96%E8%AF%91.png)   
 
-# 2. 实现打印日志功能
+# 2. 启动
+创建启动根目录，创建pd所需各目录
+
+## 2.1 启动PD  
+隐去IP:   
+```
+nohup ./pd-server --name="pd" \
+          --data-dir="/data/kaifa/deploydir/pd/data" \
+          --client-urls="http://192.168.0.1:2379" \
+          --peer-urls="http://192.168.0.1:2380" \
+          --log-file="/data/kaifa/deploydir/pd/log/pd.log" &
+```  
+查看pd状态:   
+```curl http://192.168.0.1:2379/pd/api/v1/members```   
+可见`members` `leader` `etcd_leader`都正常，脱敏麻烦不再上图
+查看pd日志:   
+
+## 2.2 启动TiKV 
+隐去IP:   
+```
+nohup ./tikv-server --addr 0.0.0.0:20171 --advertise-addr 192.168.0.1:20171 --status-addr 192.168.0.1:20181 --pd 192.168.0.1:2379 --data-dir /data/kaifa/deploydir/tikv/data --log-file /data/kaifa/deploydir/tikv/log/tikv.log &
+```
+查看pd状态:   
+```url http://192.168.0.1:2379/pd/api/v1/stores```
+
+查看启动日志:      
+
+## 2.3 启动TiDB
+隐去IP:  
+```nohup ./tidb-server -P 4000 --status=10080 --advertise-address=192.168.0.1 --path=192.168.0.1:2379  --log-slow-query=/data/kaifa/deploydir/tidb/log/tidb_slow_query.log --log-file=/data/kaifa/deploydir/tidb/log/tidb.log &```
+查看启动日志: 
+尝试访问集群:   
+```mysql -uroot -h192.168.0.1 -P4000```
+
+
+# 3. 实现打印日志功能
 
 一开始把题目看错了，看成了输出"hello transaction"给客户端，心想需要改返回值，于是想到COM_QUERY Response：   
 https://dev.mysql.com/doc/internals/en/com-query-response.html  
