@@ -28,7 +28,27 @@ recordcount太小对压测没有意义，所以设置成了一千万条
 ``` 
 ./bin/go-ycsb run mysql  -p mysql.host=192.168.0.1 -p mysql.port=4000 -p mysql.user=root -P workloads/workloada --threads 256
 ``` 
-观察性能情况：  
+观察性能情况：   
+QPS:  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/QPS.png)  
+最大没有超过8K  
+duration:  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/duration.png)  
+p95超过了1分钟；p80都到了48秒,分析下原因：    
+先看kv errors:  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/KV%20errors.png) 
+主要错误是not_leader; backoff OPS最大的region miss,高峰达到了接近3K  
+去看看TiKV的情况：  
+grpc:  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/grpc.png)  
+coprocessor最高达到1s才能执行完，kv_pessimistic_lock最大执行时间也超过1s（同时可知我开启了悲观锁）  
+是不是thread CPU有瓶颈呢？  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/thread%20cpu%201.png)  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/thread%20cpu%202.png)  
+看上去各thread占用的CPU并不高，最高60%左右，没有占满一个核  
+那么rocksdb的存取速度如何呢？  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/rocksdb%20-%20kv.png)   
+get操作最大1.4s,seek操作最大700多ms  
 
 
 
