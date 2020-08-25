@@ -143,7 +143,7 @@ sysbench --config-file=config oltp_point_select --threads=16 --tables=32 --table
 由于虚机性能有限，我把并发线程数设定为了16，tables和table-size需要和导入的数据相同。  
 最终结果如下：  
 ![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/sysbench-result.png)  
-可见场景为点查，共进行了9345598次点查，p95为2.07ms, QPS为15575.74，整体性能尚可。  
+可见场景为点查，共进行了9345598次点查，p95为2.07ms, QPS为15575.74，整体性能尚可。其它的场景不再赘述。   
 # 总结
 不同的压测工具模拟的场景不同，可能会发现更多的数据库瓶颈。本篇主要分析了ycsb的性能问题，原因为机器CPU/内存/磁盘IO均已打满，也给出了机器性能有余量时的性能问题分析方向。
 作者这次用的机器资源有限，无法调整部署方式，但是给出了调整部署方式的思路。
