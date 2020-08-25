@@ -16,6 +16,8 @@
 - 去掉部署spark(没有在ini中配置部署spark,也要下载spark-2.4.3-bin-hadoop2.7.tgz，这点比较坑；不过我没有使用tiup，所以自己扛着吧)
 - 限制ansible并发数(虚机环境下并发数过高经常跑脚本中途失败)等
 
+拓扑结构上是这样的：  
+3台虚机，每台虚机上分别有一个TiDB,一个pd，一个TiKV。  
 贴个部署成功的图吧：  
 ![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/%E9%83%A8%E7%BD%B2%E6%88%90%E5%8A%9F.png)    
 # goycsb  
@@ -75,8 +77,35 @@ IO情况：
 - 锁冲突是否过高  
 - PD集群grpc时间是否过长  
 - scheduler模块对事务排序时是否冲突太多  
-- rocksdb是否触发了流控
-等等。下面部署下另外两个压测工具
+- rocksdb是否触发了流控  
+等等。3台虚机也没有什么可以调整部署的空间了，机器多的话可以考虑把pd和tikv的存储分开以进行IO隔离，把tidb和tikv的部署分开以避免内存不够用发生OOM。  
+下面部署下另外两个压测工具  
+# go-tpc  
+## go-tpc编译
+```
+git clone https://github.com/pingcap/go-tpc.git $GOPATH/src/github.com/pingcap/go-tpc
+make build
+```   
+编译过程和结果：  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/git%20clone.png)  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/make%20build.png)  
+## go-tpc压测  
+准备数据：  
+```./bin/go-tpc tpcc -H 192.168.0.1 -P 4000 -D tpcc --warehouses 10 prepare```
+其中IP已经脱敏。因为虚机磁盘有限，所以只设置了10个warehouse。      
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/tpcc-tables.png)  
+进行压测:  
+```./bin/go-tpc tpcc -H 192.168.0.1 -P 4000 -D tpcc --warehouses 10 run```  
+压测结果：  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/tpmC.png)  
+可见得到的tpmC数值是557.1，并不高 
+压测期间的duration/QPS监控：  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/TPCC-%E7%9B%91%E6%8E%A7.png)  
+具体压测数据低的原因ycsb压测已经详述此处不再赘述。  
 # Sysbench
-# go-tpc
+## Sysbench编译  
+
+## Sysbench压测  
+
+
 
