@@ -98,14 +98,56 @@ make build
 ```./bin/go-tpc tpcc -H 192.168.0.1 -P 4000 -D tpcc --warehouses 10 run```  
 压测结果：  
 ![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/tpmC.png)  
-可见得到的tpmC数值是557.1，并不高 
+可见得到的tpmC数值是557.1，并不高  
 压测期间的duration/QPS监控：  
 ![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/TPCC-%E7%9B%91%E6%8E%A7.png)  
 具体压测数据低的原因ycsb压测已经详述此处不再赘述。  
 # Sysbench
 ## Sysbench编译  
-
+```curl -s https://packagecloud.io/install/repositories/akopytov/sysbench/script.rpm.sh | sudo bash```  
+这步卡住了，网络下载速度太慢导致失败。直接用了内网的源：  
+```sudo yum -y install sysbench```  
+这也导致我用的sysbench不是最新的版本：  
+sysbench.x86_64 0:1.0.17-2.el7  
+建立配置文件config，内容如下：  
+mysql-host=192.168.0.1
+mysql-port=4000
+mysql-user=root
+mysql-db=sbtest
+time=600
+threads=16
+report-interval=10
+db-driver=mysql  
+然后先登录待测TiDB创建sbtest的database,sysbench不会主动创建database:  
+```create database sbtest;```
 ## Sysbench压测  
+准备数据：  
+首先调整TiDB全局参数以适应数据导入：  
+```
+set global tidb_disable_txn_auto_retry = off;
+set global tidb_txn_mode="optimistic";
+```
+tidb_txn_mode为optimistic是因为导入数据不会有行锁冲突，所以乐观锁的性能更好  
+tidb_disable_txn_auto_retry为off是为了开启事务重试避免sysbench压测中因为写入数据慢导致中途失败  
+导入数据：  
+```
+sysbench --config-file=config oltp_point_select --tables=32 --table-size=10000 prepare
+```  
+磁盘空间有限所以选择了32张表，每张表1万行数据。 
+导入数据后的sbtest database:  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/sysbench-tables.png)  
+进行压测：  
+```
+sysbench --config-file=config oltp_point_select --threads=16 --tables=32 --table-size=10000 run
+```
+由于虚机性能有限，我把并发线程数设定为了16，tables和table-size需要和导入的数据相同。  
+最终结果如下：  
+![image](https://github.com/zhuboshuai/tidb-coding/blob/master/lesson-2/sysbench-result.png)  
+可见场景为点查，共进行了9345598次点查，p95为2.07ms, QPS为15575.74，整体性能尚可。  
+# 总结
+不同的压测工具模拟的场景不同，可能会发现更多的数据库瓶颈。本篇主要分析了ycsb的性能问题，原因为机器CPU/内存/磁盘IO均已打满，也给出了机器性能有余量时的性能问题分析方向。
+作者这次用的机器资源有限，无法调整部署方式，但是给出了调整部署方式的思路。
+
 
 
 
